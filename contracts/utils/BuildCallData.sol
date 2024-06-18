@@ -7,6 +7,7 @@ library BuildCallData {
     uint8 public constant SWAP_CALL_INDEX = 1;
     uint8 public constant REDEEM_CALL_INDEX = 2;
     uint8 public constant STABLE_POOL_SWAP_CALL_INDEX = 3;
+    uint8 public constant MINT_WITH_CHANNEL_ID_CALL_INDEX = 13;
 
     function buildMintCallBytes(
         address caller,
@@ -29,6 +30,31 @@ library BuildCallData {
                 targetChain,
                 toScaleString(remark)
             );
+    }
+
+    function buildMintWithChannelIdCallBytes(
+        address caller,
+        bytes2 token,
+        bytes memory targetChain,
+        string memory remark,
+        uint32 channel_id
+    ) public pure returns (bytes memory) {
+        bytes memory prefix = new bytes(2);
+        // storage pallet index
+        prefix[0] = bytes1(PALLET_INDEX);
+        // storage call index
+        prefix[1] = bytes1(MINT_WITH_CHANNEL_ID_CALL_INDEX);
+
+        // astar target_chain = bytes1(0)
+        return
+            bytes.concat(
+            prefix,
+            abi.encodePacked(caller),
+            token,
+            targetChain,
+            toScaleString(remark),
+            encode_uint32(channel_id)
+        );
     }
 
     function buildSwapCallBytes(

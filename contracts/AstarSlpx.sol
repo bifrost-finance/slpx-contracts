@@ -238,6 +238,94 @@ contract AstarSlpx is ISlpx, OwnableUpgradeable, PausableUpgradeable {
         );
     }
 
+    function mintVNativeAssetWithChannelId(
+        address receiver,
+        string memory remark,
+        uint32 channel_id
+    ) external payable override whenNotPaused {
+        require(bytes(remark).length <= 32, "remark too long");
+        bytes2 nativeToken = checkAssetIsExist(NATIVE_ASSET_ADDRESS);
+
+        xcmTransferNativeAsset(msg.value);
+
+        bytes memory targetChain = abi.encodePacked(ASTAR_CHAIN, receiver);
+        bytes memory callData = BuildCallData.buildMintWithChannelIdCallBytes(
+            _msgSender(),
+            nativeToken,
+            targetChain,
+            remark,
+            channel_id
+        );
+
+        // xcm transact
+        FeeInfo memory feeInfo = checkFeeInfo(Operation.Mint);
+        require(
+            XCM(XCM_ADDRESS).remote_transact(
+                BIFROST_PARA_ID,
+                false,
+                BNC_ADDRESS,
+                feeInfo.feeAmount,
+                callData,
+                feeInfo.transactRequiredWeightAtMost
+            ),
+            "Failed to send xcm"
+        );
+        emit Mint(
+            _msgSender(),
+            NATIVE_ASSET_ADDRESS,
+            msg.value,
+            receiver,
+            callData,
+            remark
+        );
+    }
+
+    function mintVAssetWithChannelId(
+        address assetAddress,
+        uint256 amount,
+        address receiver,
+        string memory remark,
+        uint32 channel_id
+    ) external override {
+        require(bytes(remark).length <= 32, "remark too long");
+
+        bytes2 token = checkAssetIsExist(assetAddress);
+
+        // xtokens call
+        xcmTransferAsset(assetAddress, amount);
+
+        bytes memory targetChain = abi.encodePacked(ASTAR_CHAIN, receiver);
+        bytes memory callData = BuildCallData.buildMintWithChannelIdCallBytes(
+            _msgSender(),
+            token,
+            targetChain,
+            remark,
+            channel_id
+        );
+
+        // xcm transact
+        FeeInfo memory feeInfo = checkFeeInfo(Operation.Mint);
+        require(
+            XCM(XCM_ADDRESS).remote_transact(
+                BIFROST_PARA_ID,
+                false,
+                BNC_ADDRESS,
+                feeInfo.feeAmount,
+                callData,
+                feeInfo.transactRequiredWeightAtMost
+            ),
+            "Failed to send xcm"
+        );
+        emit Mint(
+            _msgSender(),
+            assetAddress,
+            amount,
+            receiver,
+            callData,
+            remark
+        );
+    }
+
     function redeemAsset(
         address vAssetAddress,
         uint256 amount,

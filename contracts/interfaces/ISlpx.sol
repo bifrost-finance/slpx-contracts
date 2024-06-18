@@ -52,6 +52,22 @@ interface ISlpx {
         string memory remark
     ) external;
 
+    /// Minted vNative assets such as vASTR, vGLMR, vMOVR
+    function mintVNativeAssetWithChannelId(
+        address receiver,
+        string memory remark,
+        uint32 channel_id
+    ) external payable;
+
+    /// Minted vAssets
+    function mintVAssetWithChannelId(
+        address assetAddress,
+        uint256 amount,
+        address receiver,
+        string memory remark,
+        uint32 channel_id
+    ) external;
+
     /// Redeem assets
     function redeemAsset(
         address vAssetAddress,
